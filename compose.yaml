@@ -1,0 +1,13 @@
+services:
+  kometka:
+    image: ghcr.io/OWNER/kometka:latest
+    container_name: kometka
+    environment:
+      - JELLYFIN_URL=http://192.168.1.10:8096
+      - JELLYFIN_API_KEY=your-jellyfin-api-key
+      - MDBLIST_API_KEY=your-mdblist-api-key
+      - SCHEDULE=05:00
+      - TZ=Europe/Madrid
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
