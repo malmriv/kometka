@@ -41,14 +41,21 @@ If you do choose Docker, this is an example of what your manifest file might loo
 services:
   kometka:
     image: ghcr.io/malmriv/kometka:latest
+    pull_policy: always
     container_name: kometka
+    user: 1000:65000
     environment:
-      - JELLYFIN_URL=http://192.168.1.10:8096
-      - JELLYFIN_API_KEY=your-jellyfin-api-key
-      - MDBLIST_API_KEY=your-mdblist-api-key
       - TZ=Europe/Madrid
+      - JELLYFIN_URL=http://192.168.1.100:8096
+      - JELLYFIN_API_KEY_FILE=/data/jellyfin.key
+      - MDBLIST_API_KEY_FILE=/data/mdblist.key
+      - SCHEDULE=05:00
     volumes:
-      - ./data:/data
+      # The app will used the mapped dir to save the original posters
+      # as well as your API key files and logs
+      - /volume1/docker/kometka:/data
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 ```
 
