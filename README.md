@@ -23,19 +23,19 @@ Kometka is a small app whose only purpose is to add ratings to your Jellyfin cat
 ## How it works
 
 - Kometka keeps a copy of every original poster just in case.
-- When it runs (once the first time, then daily or however you configure it) it performs a delta. Meaning, it checks what needs to be changed (unmarked movies, movies whose ratings have changed, etc.), then updates the poster through [the Jellyfin API](https://api.jellyfin.org). The ratings themselves are fetched from [MDBList](https://mdblist.com).
+- When it runs (once the first time, then daily or however you configure it) it performs a delta. Meaning, it checks what needs to be changed (unmarked movies, movies whose ratings have changed, etc.), then updates the poster through [the Jellyfin API](https://api.jellyfin.org). The ratings come from [MDBList](https://mdblist.com).
 - The posters come up on every Jellyfin client (on your TV, phone, laptop...)
 - Because Kometa's license allows for it, I have pulled the visual elements they use in their overlays to reproduce something as similar as possible in Jellyfin.
 
 ## Requirements
 
 - A Jellyfin API key: *Dashboard > API Keys*.
-- A free MDBList API key: *mdblist.com > Preferences > API*.
+- A free MDBList API key, for which you need to create an account: *mdblist.com > Preferences > API*.
 
 ## Installation
 I would recommend using Docker to run it, rather than setting this up as a chron job. Up to you, though. 
 
-If you do choose Docker, this is an example of what your manifest file might look like. I uploaded the image to GitHub Container Registry to make things easier for everyone:
+If you do choose Docker, this is an example of what your manifest file might look like. I uploaded the image to GitHub Container Registry to make things easier for everyone.
 
 ```yaml
 services:
