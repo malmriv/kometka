@@ -30,7 +30,7 @@ class Jellyfin:
 
     def movies(self, libraries=()):
         """Movies with their TMDb id (ProviderIds) and poster tag (ImageTags)."""
-        params = dict(IncludeItemTypes="Movie", Recursive="true", Fields="ProviderIds")
+        params = dict(IncludeItemTypes="Movie", Recursive="true", Fields="ProviderIds", CollapseBoxSetItems="false")
         if not libraries:
             return self._items(**params)
         movies = []
