@@ -2,6 +2,9 @@
 
 All notable changes to Kometka are documented here.
 
+## [1.0.1] - November 2nd, 2026
+- Bug: movies in a collection were not processed. Fix provided by friend: require collection items not to be collapsed in Jellyfin API calls.
+
 ## [1.0.0] - November 1st, 2026
 
 - Letterboxd, Rotten Tomatoes (Fresh, Rotten and Certified Fresh) and IMDb badges on Jellyfin movie posters, styled after Kometa's ratings overlay.
