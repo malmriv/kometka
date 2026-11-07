@@ -116,9 +116,9 @@ I actively try to use as little AI as possible, especially for personal projects
 
 - The licensing of this repo (see above section) was chosen by Claude, since I know very little about licenses. I verified that it makes sense and kept it.
 - I had never used [Pillow](https://pillow.readthedocs.io/en/stable/) (the Python library which was the most sensible option to draw the overlay on the posters), so I delegated the task on Claude. (I still have [ImageMagick](https://imagemagick.org/)-induced PTSD from my university days and I hope to never edit an image via command line ever again).
-- Perform a general sanity check when the project was starting to become usable. Claude provided several useful proposals, such as turning some hard-coded choices into environment variables, actually updating the image to an image repository (for which it set up a very convenient GitHub Action).
-- Cleaning up the code, adding comments that could be useful both for future-me.
-- *Formating* this README to make it look a bit better.
+- Perform a general sanity check when the project was starting to become usable. Claude provided several useful proposals, such as turning some hard-coded choices into environment variables and actually updating the image to an image repository.
+- Cleaning up the code, adding comments that could be useful for future-me.
+- *Formating* this README to make it look a bit better. (The text is entirely mine, though!)
 
 There is a long tradition of free software having [badly drawn creatures](https://en.wikipedia.org/wiki/List_of_computing_mascots) as a logo. I wanted to contribute, so I settled on a badly drawn space rock. I drew the tail-less comet by hand on a notebook, and with the invaluable help of Paula (who picked the silliest face in all of the assortment), I had a logo. It was coloured and vectorised in my computer.
 
