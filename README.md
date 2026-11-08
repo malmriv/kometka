@@ -22,8 +22,8 @@ Kometka is a small app whose only purpose is to add ratings to your Jellyfin cat
 
 ## How it works
 
-- Kometka keeps a copy of every original poster just in case.
-- When it runs (once the first time, then daily or however you configure it) it performs a delta. Meaning, it checks what needs to be changed (unmarked movies, movies whose ratings have changed, etc.), then updates the poster through [the Jellyfin API](https://api.jellyfin.org). The ratings come from [MDBList](https://mdblist.com).
+- When Kometka runs (once the first time, then daily) it performs a delta. Meaning, it checks what needs to be changed (unmarked movies, movies whose ratings have changed, etc.), then updates the poster through [the Jellyfin API](https://api.jellyfin.org). The ratings come from [MDBList](https://mdblist.com).
+- A copy of every original poster is kept to avoid re-drawing on an existing overlay.
 - The posters come up on every Jellyfin client (on your TV, phone, laptop...)
 - Because Kometa's license allows for it, I have pulled the visual elements they use in their overlays to reproduce something as similar as possible in Jellyfin.
 
@@ -33,7 +33,7 @@ Kometka is a small app whose only purpose is to add ratings to your Jellyfin cat
 - A free MDBList API key, for which you need to create an account: *mdblist.com > Preferences > API*.
 
 ## Installation
-I would recommend using Docker to run it, rather than setting this up as a chron job. Up to you, though. 
+You can either run this using Docker or set it up as a cron job. Because it takes up very little memory (about 50-60 Mb) and idles most of the time, I would recommend Docker. If your server is very memory-constrained, you might have more success just having it run as a scheduled task. Synology [offers that feature](https://kb.synology.com/en-global/DSM/help/DSM/AdminCenter/system_taskscheduler?version=7) out of the box. Up to you, though!
 
 If you do choose Docker, this is an example of what your manifest file might look like. I uploaded the image to GitHub Container Registry to make things easier for everyone.
 
@@ -90,10 +90,10 @@ Besides the configuration shown in the example, you can make some small adjustme
 
 ## Useful commands
 
-```sh
-docker exec kometka python -m kometka --once      # run a pass now
-docker compose run --rm kometka --restore         # put the original posters back
-```
+(Might require `sudo`).
+
+- Run a pass to update/add ratings: `docker exec kometka python -m kometka --once`
+- Put the original posters back: `docker compose run --rm kometka --restore`
 
 ## Credits and licensing stuff
 
