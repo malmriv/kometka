@@ -53,17 +53,25 @@ def draw(poster, badges):
     return Image.alpha_composite(im, layer).convert("RGB")
 
 
-def badges_from_mdblist(movie, sources, certified_fresh=frozenset()):
-    """Turns an MDBList movie into [(icon, text), ...] in the order of sources."""
-    ratings = {r["source"]: r["value"] for r in movie.get("ratings", []) if r.get("value") is not None}
-    tmdb = (movie.get("ids") or {}).get("tmdb")
+def ratings_from_mdblist(item, certified_fresh=frozenset()):
+    """The ratings Kometka can draw from an MDBList movie or show, e.g.
+    {"letterboxd": 3.9, "tomatoes": 92, "certified_fresh": True, "imdb": 7.5}. Letterboxd is out of 5."""
+    found = {r["source"]: r["value"] for r in item.get("ratings", []) if r.get("value") is not None}
+    ratings = {source: found[source] for source in ("letterboxd", "tomatoes", "imdb") if source in found}
+    if "tomatoes" in ratings:
+        ratings["certified_fresh"] = (item.get("ids") or {}).get("tmdb") in certified_fresh
+    return ratings
+
+
+def badges(ratings, sources, letterboxd_scale=5):
+    """Turns ratings into [(icon, text), ...] in the order of sources, Letterboxd out of letterboxd_scale."""
     badges = []
     for source in sources:
         if source == "letterboxd" and "letterboxd" in ratings:
-            badges.append(("Letterboxd", "%.1f" % ratings["letterboxd"]))
+            badges.append(("Letterboxd", "%.1f" % (ratings["letterboxd"] * letterboxd_scale / 5)))
         elif source == "rottentomatoes" and "tomatoes" in ratings:
             score = ratings["tomatoes"]
-            icon = ("RT-Crit-Top" if tmdb in certified_fresh
+            icon = ("RT-Crit-Top" if ratings.get("certified_fresh")
                     else "RT-Crit-Fresh" if score >= FRESH else "RT-Crit-Rotten")
             badges.append((icon, "%d%%" % score))
         elif source == "imdb" and "imdb" in ratings:

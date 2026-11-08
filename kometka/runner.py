@@ -1,10 +1,12 @@
 """One pass over the library, and restoring the original posters.
 
-For every movie:
-  1. If the poster tag changed (new movie, or Jellyfin replaced the poster), download it.
+For every movie and series:
+  1. If the poster tag changed (new item, or Jellyfin replaced the poster), download it.
      Unless it carries Kometka's marker, keep it as the original.
   2. Refresh the ratings from MDBList at most every RATINGS_MAX_AGE_DAYS.
-  3. If the original or the ratings changed, draw the badges on the ORIGINAL and upload it.
+  3. If the original or the badges changed, draw the badges on the ORIGINAL and upload it.
+     The badges are worked out from the stored ratings on every pass, so changes to SOURCES
+     or LETTERBOXD_SCALE show up on the next pass without asking MDBList again.
 Generated posters carry a JPEG comment marker, so they are never mistaken for originals.
 """
 import io
@@ -23,10 +25,12 @@ log = logging.getLogger("kometka")
 MARKER = b"kometka"
 CERTIFIED_MAX_AGE_DAYS = 7
 DAY = 86400
+# Jellyfin item type -> MDBList media type
+MEDIA_TYPES = {"Movie": "movie", "Series": "show"}
 
 
 class State:
-    """Per-movie bookkeeping, kept as JSON in the data directory."""
+    """Per-item bookkeeping, kept as JSON in the data directory."""
 
     def __init__(self, path):
         self.path = path
@@ -35,11 +39,14 @@ class State:
                 self.data = json.load(f)
         except FileNotFoundError:
             self.data = {}
-        self.data.setdefault("movies", {})
+        # Kometka 1.0.x only did movies: it kept them under "movies", with a single Certified Fresh list.
+        self.data.setdefault("items", self.data.pop("movies", {}))
+        if "tmdb" in self.data.get("certified_fresh", {}):
+            del self.data["certified_fresh"]
 
     @property
-    def movies(self):
-        return self.data["movies"]
+    def items(self):
+        return self.data["items"]
 
     def save(self):
         tmp = self.path + ".tmp"
@@ -65,16 +72,16 @@ def _originals(cfg):
     return path
 
 
-def _certified_fresh(cfg, mdb, state, now):
-    if "rottentomatoes" not in cfg.sources:
-        return frozenset()
-    cached = state.data.get("certified_fresh")
+def _certified_fresh(mdb, state, media_type, now):
+    # Fetched even when SOURCES leaves Rotten Tomatoes out, so the stored ratings stay complete.
+    lists = state.data.setdefault("certified_fresh", {})
+    cached = lists.get(media_type)
     if not cached or now - cached["fetched"] > CERTIFIED_MAX_AGE_DAYS * DAY:
         try:
-            cached = {"fetched": now, "tmdb": sorted(mdb.certified_fresh())}
-            state.data["certified_fresh"] = cached
+            cached = {"fetched": now, "tmdb": sorted(mdb.certified_fresh(media_type))}
+            lists[media_type] = cached
         except Exception as e:
-            log.warning("Could not fetch the Certified Fresh list: %s", e)
+            log.warning("Could not fetch the Certified Fresh %ss list: %s", media_type, e)
             cached = cached or {"tmdb": []}
     return frozenset(cached["tmdb"])
 
@@ -82,18 +89,19 @@ def _certified_fresh(cfg, mdb, state, now):
 def run_pass(cfg, jf, mdb, state, now=None):
     now = now or time.time()
     originals = _originals(cfg)
-    certified = _certified_fresh(cfg, mdb, state, now)
+    certified = {}  # MDBList media type -> Certified Fresh TMDb ids, fetched when first needed
     rate_limited = False
     stats = dict(updated=0, unchanged=0, no_ratings=0, skipped=0, errors=0)
 
-    for movie in jf.movies(cfg.libraries):
-        item_id, name = movie["Id"], movie.get("Name", "?")
-        tmdb = (movie.get("ProviderIds") or {}).get("Tmdb")
-        tag = (movie.get("ImageTags") or {}).get("Primary")
-        if not tmdb or not tag:
+    for item in jf.items(cfg.libraries):
+        item_id, name = item["Id"], item.get("Name", "?")
+        media_type = MEDIA_TYPES.get(item.get("Type"))
+        tmdb = (item.get("ProviderIds") or {}).get("Tmdb")
+        tag = (item.get("ImageTags") or {}).get("Primary")
+        if not media_type or not tmdb or not tag:
             stats["skipped"] += 1
             continue
-        entry = state.movies.setdefault(item_id, {})
+        entry = state.items.setdefault(item_id, {})
         original = os.path.join(originals, item_id + ".img")
         try:
             new_original = False
@@ -105,16 +113,21 @@ def run_pass(cfg, jf, mdb, state, now=None):
                     new_original = True
                 entry["tag"] = tag
 
-            if not rate_limited and now - entry.get("rated", 0) > cfg.ratings_max_age_days * DAY:
+            # Entries from Kometka 1.0.x kept the badges instead of the ratings, so they are refreshed too.
+            stale = "ratings" not in entry or now - entry.get("rated", 0) > cfg.ratings_max_age_days * DAY
+            if not rate_limited and stale:
                 try:
-                    data = mdb.movie(tmdb)
-                    entry["badges"] = overlay.badges_from_mdblist(data, cfg.sources, certified) if data else []
+                    if media_type not in certified:
+                        certified[media_type] = _certified_fresh(mdb, state, media_type, now)
+                    data = mdb.item(media_type, tmdb)
+                    entry["ratings"] = overlay.ratings_from_mdblist(data, certified[media_type]) if data else {}
                     entry["rated"] = now
+                    entry.pop("badges", None)
                 except RateLimited as e:
                     rate_limited = True
                     log.warning("%s, the rest will be refreshed on the next pass", e)
 
-            badges = [tuple(b) for b in entry.get("badges") or []]
+            badges = overlay.badges(entry.get("ratings") or {}, cfg.sources, cfg.letterboxd_scale)
             if not badges:
                 stats["no_ratings"] += 1
                 continue
@@ -138,10 +151,10 @@ def run_pass(cfg, jf, mdb, state, now=None):
 
 
 def restore(cfg, jf, state):
-    """Uploads the original posters back and forgets about those movies."""
+    """Uploads the original posters back and forgets about those items."""
     originals = _originals(cfg)
     restored = 0
-    for item_id in list(state.movies):
+    for item_id in list(state.items):
         path = os.path.join(originals, item_id + ".img")
         if os.path.exists(path):
             try:
@@ -153,7 +166,7 @@ def restore(cfg, jf, state):
             except Exception as e:
                 log.error("%s: %s", item_id, e)
                 continue
-        del state.movies[item_id]
+        del state.items[item_id]
     state.save()
     log.info("Restored %d original posters", restored)
     return restored

@@ -28,15 +28,16 @@ class Jellyfin:
                              % (", ".join(missing), ", ".join(found)))
         return [found[n] for n in names]
 
-    def movies(self, libraries=()):
-        """Movies with their TMDb id (ProviderIds) and poster tag (ImageTags)."""
-        params = dict(IncludeItemTypes="Movie", Recursive="true", Fields="ProviderIds", CollapseBoxSetItems="false")
+    def items(self, libraries=()):
+        """Movies and series with their type (Type), TMDb id (ProviderIds) and poster tag (ImageTags)."""
+        params = dict(IncludeItemTypes="Movie,Series", Recursive="true", Fields="ProviderIds",
+                      CollapseBoxSetItems="false")
         if not libraries:
             return self._items(**params)
-        movies = []
+        items = []
         for parent in self.library_ids(libraries):
-            movies += self._items(ParentId=parent, **params)
-        return movies
+            items += self._items(ParentId=parent, **params)
+        return items
 
     def poster_tag(self, item_id):
         items = self._items(Ids=item_id)

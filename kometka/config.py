@@ -35,6 +35,7 @@ class Config:
     sources: tuple = SOURCES
     libraries: tuple = ()
     ratings_max_age_days: int = 7
+    letterboxd_scale: int = 5
 
     @classmethod
     def from_env(cls):
@@ -49,6 +50,7 @@ class Config:
             sources=_list(env("SOURCES", ",".join(SOURCES)).lower()),
             libraries=_list(env("LIBRARIES", "")),
             ratings_max_age_days=int(env("RATINGS_MAX_AGE_DAYS", "7")),
+            letterboxd_scale=int(env("LETTERBOXD_SCALE", "5")),
         )
         cfg.validate()
         return cfg
@@ -64,3 +66,5 @@ class Config:
         unknown = [s for s in self.sources if s not in SOURCES]
         if unknown or not self.sources:
             raise ConfigError("SOURCES must be a comma-separated subset of %s" % ",".join(SOURCES))
+        if self.letterboxd_scale not in (5, 10):
+            raise ConfigError("LETTERBOXD_SCALE must be 5 or 10, got %r" % self.letterboxd_scale)

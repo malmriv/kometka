@@ -16,7 +16,7 @@
   <a href="#authorship-disclaimer">Authorship disclaimer</a>
 </p>
 
-Kometka is a small app whose only purpose is to add ratings to your Jellyfin catalog. The ratings are overlaid on the movie posters themselves. Because it's sort of a tiny [Kometa](https://github.com/Kometa-Team/Kometa)-inspired app I have decided to call it Kometka (a *small* comet).
+Kometka is a small app whose only purpose is to add ratings to your Jellyfin catalog. The ratings are overlaid on the posters themselves. Because it's sort of a tiny [Kometa](https://github.com/Kometa-Team/Kometa)-inspired app I have decided to call it Kometka (a *small* comet).
 
 ![Kometka posters in Jellyfin](docs/screenshots/screenshot-sample.jpg)
 
@@ -84,7 +84,8 @@ Besides the configuration shown in the example, you can make some small adjustme
 | `RUN_ON_START` | `true` | Also run when the container starts |
 | `SOURCES` | `letterboxd,rottentomatoes,imdb` | Which badges to draw, in this order |
 | `LIBRARIES` | all | Comma-separated Jellyfin library names |
-| `RATINGS_MAX_AGE_DAYS` | `7` | How often each movie's ratings are refreshed |
+| `RATINGS_MAX_AGE_DAYS` | `7` | How often each movie's or series' ratings are refreshed |
+| `LETTERBOXD_SCALE` | `5` | Scale for Letterboxd ratings: 5 or 10. |
 | `LOG_LEVEL` | `INFO` | |
 
 ## Useful commands
